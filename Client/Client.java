@@ -10,25 +10,28 @@ import java.util.Scanner;
 public class Client extends JFrame {
 
     private JTextField         textBox;
+    private JTextArea          textArea;
+    private JScrollPane        scrollPane;
     private ObjectOutputStream output;
     private ObjectInputStream  input;
     private Socket             connection;
-    private String             msgFromServer;
     private FileInputStream    fin;
     private FileOutputStream   fout;
+
+    private final static String endl = "\n";
 
 
 
 
     public Client() {
-        super("ClientChatBox");
+        super("Client");
         createAndShowGUI();
     }
 
     private void createAndShowGUI() {
 
         textBox = new JTextField();
-        new TextPrompt("Type Filename Here...",textBox);
+        new TextPrompt("Type Filename and press Enter Key...",textBox);
 
         textBox.addActionListener(new ActionListener() {
             @Override
@@ -38,22 +41,28 @@ public class Client extends JFrame {
             }
         });
 
+        textArea = new JTextArea();
+        textArea.setBackground(Color.GRAY);
+        textArea.setForeground(Color.cyan);
+        textArea.setEditable(false);
 
+        scrollPane = new JScrollPane(textArea);
+        scrollPane.setVerticalScrollBarPolicy(22);
 
+        add(textBox,BorderLayout.NORTH);
+        add(scrollPane,BorderLayout.CENTER);
 
-        add(textBox, BorderLayout.NORTH);
-
-        setSize(250,300);
+        setSize(350,290);
         setVisible(true);
     }
 
     public void runClient() {
         try {
-            connection = new Socket("127.0.0.1",1111);
+            connection = new Socket("localhost",1111);
             getStream();
             processConnection();
         }
-        catch (IOException e) {}
+        catch (Exception e) {}
 
         finally {
 
@@ -82,7 +91,9 @@ public class Client extends JFrame {
 
             try {
                 String filename = (String) input.readObject();
-                fout = new FileOutputStream("/home/rajan/IdeaProjects/FileSharing/src/"+filename);
+                displayMessage(filename+" is receving from Server");
+
+                fout = new FileOutputStream("/home/rajan/IdeaProjects/FileSharing/src/"+"copy"+filename);
 
                 int ch;
 
@@ -95,9 +106,9 @@ public class Client extends JFrame {
 
                 }while(ch!=-1);
 
+
             }
-            catch (IOException e) {}
-            catch (ClassNotFoundException e) {}
+            catch (Exception ex){}
         }
     }
 
@@ -108,10 +119,13 @@ public class Client extends JFrame {
     private void sendData(String filename) {
 
         try {
+
+            fin = new FileInputStream("/home/rajan/IdeaProjects/FileSharing/src/"+filename);
+
             output.writeObject(filename);
             output.flush();
 
-            fin = new FileInputStream("/home/rajan/IdeaProjects/FileSharing/src/"+filename);
+            displayMessage(filename + " is Client to Server");
 
             int ch;
 
@@ -123,7 +137,26 @@ public class Client extends JFrame {
                 }
 
             }while(ch!=-1);
-        } catch (IOException e) {}
+
+
+
+        }
+        catch (FileNotFoundException e) {
+            displayMessage("Woops , File Not Found !");
+        }
+        catch (IOException e) {}
+    }
+
+    private void displayMessage(String msg) {
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                textArea.append(endl + msg);
+
+            }
+        });
+
     }
 
 
