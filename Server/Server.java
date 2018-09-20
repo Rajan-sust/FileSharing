@@ -9,25 +9,30 @@ import java.net.Socket;
 
 public class Server extends JFrame {
 
+
     private JTextField         textBox;
+    private JTextArea          textArea;
+    private JScrollPane        scrollPane;
     private ObjectOutputStream output;
     private ObjectInputStream  input;
     private Socket             connection;
     private ServerSocket       server;
-    private String             msgFromClient;
     private FileInputStream    fin;
     private FileOutputStream   fout;
 
+    private final static String endl = "\n";
+
+
     public Server() {
 
-        super("ServerChatBox");
+        super("Server");
         createAndShowGUI();
     }
 
     private void createAndShowGUI() {
 
         textBox = new JTextField();
-        new TextPrompt("Type Filename Here...",textBox);
+        new TextPrompt("Type Filename and press Enter Key...",textBox);
 
         textBox.addActionListener(new ActionListener() {
             @Override
@@ -37,10 +42,18 @@ public class Server extends JFrame {
             }
         });
 
+        textArea = new JTextArea();
+        textArea.setBackground(Color.GRAY);
+        textArea.setForeground(Color.cyan);
+        textArea.setEditable(false);
 
-        add(textBox, BorderLayout.NORTH);
+        scrollPane = new JScrollPane(textArea);
+        scrollPane.setVerticalScrollBarPolicy(22);
 
-        setSize(300,300);
+        add(textBox,BorderLayout.NORTH);
+        add(scrollPane,BorderLayout.CENTER);
+
+        setSize(350,290);
         setVisible(true);
     }
 
@@ -68,15 +81,16 @@ public class Server extends JFrame {
     }
 
 
-    private void waitForConnection()  {
+    private void waitForConnection() {
 
-        System.out.println("Server is waiting........");
+        displayMessage("Server is waiting for client request ......");
 
         try {
             connection = server.accept();
         } catch (IOException e) {}
 
-        System.out.println("Connected With Ip : " + connection.getInetAddress().getHostName());
+        displayMessage("Connected With Ip : " + connection.getInetAddress().getHostName());
+
     }
 
     private void getStream() {
@@ -91,24 +105,31 @@ public class Server extends JFrame {
 
         while(true) {
 
+
             try {
                 String filename = (String) input.readObject();
-                fout = new FileOutputStream("/home/rajan/IdeaProjects/FileSharing/src/"+"replica"+filename);
+
+
+                fout = new FileOutputStream("/home/rajan/IdeaProjects/FileSharing/src/"+"copy"+filename);
 
                 int ch;
 
                 do{
                     ch = input.readChar();
+
                     if(ch!=-1){
                         fout.write(ch);
                         fout.flush();
                     }
 
+
                 }while(ch!=-1);
+
+
             }
-            catch (IOException e) {}
-            catch (ClassNotFoundException e) {}
+
             catch (Exception ex) {}
+
         }
     }
 
@@ -118,10 +139,12 @@ public class Server extends JFrame {
     private void sendData(String filename) {
 
         try {
+            fin = new FileInputStream("/home/rajan/IdeaProjects/FileSharing/src/"+filename);
+
             output.writeObject(filename);
             output.flush();
 
-            fin = new FileInputStream("/home/rajan/IdeaProjects/FileSharing/src/"+filename);
+            displayMessage(filename + " is Server to Client");
 
             int ch;
 
@@ -135,10 +158,23 @@ public class Server extends JFrame {
                 }
 
             }while(ch!=-1);
+        }
+        catch (FileNotFoundException e) {
+            displayMessage("Woops , File Not Found !");
+        }
+        catch (Exception e) {}
 
+    }
 
+    private void displayMessage(String msg) {
 
-        } catch (IOException e) {}
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                textArea.append(endl + msg);
+            }
+        });
+
     }
 
 
